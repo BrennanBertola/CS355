@@ -95,22 +95,6 @@ def display():
     glColor3f (1.0, 1.0, 1.0)
     # viewing transformation 
 
-    
-    #Your Code Here
-
-
-    #glLoadIdentity()
-    #if (ORTHO):
-        #glMatrixMode(GL_PROJECTION)
-       # gluOrtho2D(-10,10,-10,10)
-        #glMatrixMode(GL_MODELVIEW)
-    #else:
-        #glMatrixMode(GL_MODELVIEW)
-       # gluPerspective(90, DISPLAY_WIDTH / DISPLAY_HEIGHT, 1, 50)
-
-    #glRotated(CURR_DEG, 0, 1, 0)
-    #glTranslate(CURR_X, CURR_Y, CURR_Z)
-
 
     drawHouse()
 
