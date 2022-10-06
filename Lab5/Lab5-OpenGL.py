@@ -1,4 +1,5 @@
 import sys
+import numpy as np
 
 try:
     from OpenGL.GLUT import *
@@ -17,15 +18,26 @@ except:
 
 DISPLAY_WIDTH = 500.0
 DISPLAY_HEIGHT = 500.0
+NCLIP = 1
+FCLIP = 50
 
 CURR_X = 0
-CURR_Y = -4
+DEFAULT_X = 0
+CURR_Y = -3
+DEFAULT_Y = -3
 CURR_Z = -15
+DEFAULT_Z = -15
 CURR_DEG = 0
+FOV = 60
+ORTHO = 0
 
 def init(): 
     glClearColor (0.0, 0.0, 0.0, 0.0)
     glShadeModel (GL_FLAT)
+    glMatrixMode(GL_MODELVIEW)
+    glLoadIdentity()
+    gluPerspective(FOV, DISPLAY_WIDTH / DISPLAY_HEIGHT, NCLIP, FCLIP)
+    glTranslate(DEFAULT_X, DEFAULT_Y, DEFAULT_Z)
 
 def drawHouse ():
     glLineWidth(2.5)
@@ -86,10 +98,19 @@ def display():
     
     #Your Code Here
 
-    glLoadIdentity()
-    gluPerspective(90, DISPLAY_WIDTH / DISPLAY_HEIGHT, 0, 1)
-    glRotated(CURR_DEG, 0, 1, 0)
-    glTranslated(CURR_X, CURR_Y, CURR_Z)
+
+    #glLoadIdentity()
+    #if (ORTHO):
+        #glMatrixMode(GL_PROJECTION)
+       # gluOrtho2D(-10,10,-10,10)
+        #glMatrixMode(GL_MODELVIEW)
+    #else:
+        #glMatrixMode(GL_MODELVIEW)
+       # gluPerspective(90, DISPLAY_WIDTH / DISPLAY_HEIGHT, 1, 50)
+
+    #glRotated(CURR_DEG, 0, 1, 0)
+    #glTranslate(CURR_X, CURR_Y, CURR_Z)
+
 
     drawHouse()
 
@@ -97,11 +118,17 @@ def display():
     glFlush()
     
 
+def movement(x, z):
+    xMove = x*np.cos(CURR_DEG) + z*-np.sin(CURR_DEG)
+    zMove = x*np.sin(CURR_DEG) + z*np.cos(CURR_DEG)
+    return xMove, zMove
+
 def keyboard(key, x, y):
     global CURR_X
     global CURR_Y
     global CURR_Z
     global CURR_DEG
+    global ORTHO
     
     if key == chr(27):
         import sys
@@ -111,38 +138,75 @@ def keyboard(key, x, y):
 
     if key == b'w':
         print("W, move forward")
+        x, z = movement(0,1)
         CURR_Z += 1
+        glTranslate(x,0,z)
     elif key == b'a':
         print("A, move left")
+        x, z = movement(1, 0)
         CURR_X += 1
+        glTranslate(x, 0, z)
     elif key == b's':
         print("S, move back")
+        x, z = movement(0, -1)
         CURR_Z -= 1
+        glTranslate(x, 0, z)
     elif key == b'd':
         print("D, move right")
+        x, z = movement(-1, 0)
         CURR_X -= 1
+        glTranslate(x, 0, z)
     elif key == b'q':
         print("Q, turn left")
         CURR_DEG -= 1
+        glTranslate(-CURR_X, -CURR_Y, -CURR_Z)
+        glRotate(-1,0,1,0)
+        glTranslate(CURR_X, CURR_Y, CURR_Z)
     elif key == b'e':
         print("E, turn right")
         CURR_DEG += 1
+        glTranslate(-CURR_X, -CURR_Y, -CURR_Z)
+        glRotate(1,0,1,0)
+        glTranslate(CURR_X, CURR_Y, CURR_Z)
+
     elif key == b'r':
         print("R, move up")
         CURR_Y -= 1
+        glTranslate(0, -1, 0)
     elif key == b'f':
         print("F, move down")
         CURR_Y += 1
+        glTranslate(0, 1, 0)
     elif key == b'h':
         print("H, return home")
-        CURR_X = 0
-        CURR_Y = -4
-        CURR_Z = -15
+
+        glLoadIdentity()
+        if(ORTHO):
+            glOrtho(-10,10,-10,10, NCLIP, FCLIP)
+        else:
+            gluPerspective(FOV, DISPLAY_WIDTH / DISPLAY_HEIGHT, NCLIP, FCLIP)
+        glTranslate(DEFAULT_X, DEFAULT_Y, DEFAULT_Z)
+
+        CURR_X = DEFAULT_X
+        CURR_Y = DEFAULT_Y
+        CURR_Z = DEFAULT_Z
         CURR_DEG = 0
+
     elif key == b'o':
         print("O, orthographic projection")
+        ORTHO = 1
+
+        glLoadIdentity()
+        glOrtho(-10,10,-10,10, NCLIP, FCLIP)
+        glRotate(CURR_DEG, 0, 1, 0)
+        glTranslate(CURR_X, CURR_Y, CURR_Z)
     elif key == b'p':
         print("P, perspective projection")
+        ORTHO = 0
+        glLoadIdentity()
+        gluPerspective(FOV, DISPLAY_WIDTH / DISPLAY_HEIGHT, NCLIP, FCLIP)
+        glRotate(CURR_DEG, 0, 1, 0)
+        glTranslate(CURR_X, CURR_Y, CURR_Z)
   
     #Your Code Here
   
