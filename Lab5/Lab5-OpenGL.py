@@ -119,8 +119,9 @@ def display():
     
 
 def movement(x, z):
-    xMove = x*np.cos(CURR_DEG) + z*-np.sin(CURR_DEG)
-    zMove = x*np.sin(CURR_DEG) + z*np.cos(CURR_DEG)
+    rad = CURR_DEG * (np.pi/180)
+    xMove = x*np.cos(rad) + z*-np.sin(rad)
+    zMove = x*np.sin(rad) + z*np.cos(rad)
     return xMove, zMove
 
 def keyboard(key, x, y):
