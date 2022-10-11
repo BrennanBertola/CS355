@@ -29,7 +29,14 @@ CURR_Y = 0.0
 CURR_Z = 0.0
 CURR_DEG = 0
 
+CAR_X = -15
+CAR_Y = 0
+CAR_Z = -15
 
+TIRE_X = 2
+TIRE_Y = .25
+TIRE_Z = 1.5
+TIRE_ROTATION = 0
 
 
 def init(): 
@@ -41,7 +48,7 @@ def init():
 
 def drawHouse ():
     glLineWidth(2.5)
-    glColor3f(1.0, 0.0, 0.0)
+    glColor3f(1.0, .713, .757)
     #Floor
     glBegin(GL_LINES)
     glVertex3f(-5.0, 0.0, -5.0)
@@ -203,7 +210,6 @@ def display():
     glColor3f (1.0, 1.0, 1.0)
     # viewing transformation 
 
-
     #House 1
     glPushMatrix()
     glTranslate(0,0,-30)
@@ -264,9 +270,51 @@ def display():
     drawHouse()
     glPopMatrix()
 
-    
+    #Car
+    glPushMatrix()
+    glTranslate(CAR_X, CAR_Y, CAR_Z)
+    drawCar()
+    glPopMatrix()
+
+    #Front-Right Tire
+    glPushMatrix()
+    glTranslate(CAR_X + TIRE_X, CAR_Y - TIRE_Y, CAR_Z + TIRE_Z)
+    glRotate(TIRE_ROTATION, 0, 0, 1)
+    drawTire()
+    glPopMatrix()
+
+    #Back-Right Tire
+    glPushMatrix()
+    glTranslate(CAR_X - TIRE_X, CAR_Y - TIRE_Y, CAR_Z + TIRE_Z)
+    glRotate(TIRE_ROTATION, 0, 0, 1)
+    drawTire()
+    glPopMatrix()
+
+    #Frong-Left Tire
+    glPushMatrix()
+    glTranslate(CAR_X + TIRE_X, CAR_Y - TIRE_Y, CAR_Z - TIRE_Z)
+    glRotate(TIRE_ROTATION, 0, 0, 1)
+    drawTire()
+    glPopMatrix()
+
+    #Back-Left Tire
+    glPushMatrix()
+    glTranslate(CAR_X - TIRE_X, CAR_Y - TIRE_Y, CAR_Z - TIRE_Z)
+    glRotate(TIRE_ROTATION, 0, 0, 1)
+    drawTire()
+    glPopMatrix()
+
     glFlush()
-    
+
+
+def timerUpdate(test):
+    global CAR_X
+    global TIRE_ROTATION
+
+    CAR_X += .125
+    TIRE_ROTATION -= 1.3
+    display()
+    glutTimerFunc(20, timerUpdate, 0)
 
 def movement(x, z):
     rad = CURR_DEG * (np.pi/180)
@@ -279,6 +327,11 @@ def keyboard(key, x, y):
     global CURR_Y
     global CURR_Z
     global CURR_DEG
+
+    global CAR_X
+    global CAR_Y
+    global CAR_Z
+
     global ORTHO
     
     if key == chr(27):
@@ -350,6 +403,15 @@ def keyboard(key, x, y):
         CURR_Z = 0
         CURR_DEG = 0
 
+        CAR_X = -15
+        CAR_Y = 0
+        CAR_Z = -15
+
+    elif key == b'j':
+        CAR_X = -15
+        CAR_Y = 0
+        CAR_Z = -15
+
     elif key == b'o':
         print("O, orthographic projection")
         ORTHO = 1
@@ -379,4 +441,5 @@ glutCreateWindow (b'OpenGL Lab')
 init ()
 glutDisplayFunc(display)
 glutKeyboardFunc(keyboard)
+timerUpdate(0)
 glutMainLoop()
