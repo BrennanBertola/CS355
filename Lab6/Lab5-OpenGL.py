@@ -19,17 +19,18 @@ except:
 DISPLAY_WIDTH = 500.0
 DISPLAY_HEIGHT = 500.0
 NCLIP = 1
-FCLIP = 50
-
-CURR_X = 0
-DEFAULT_X = 0
-CURR_Y = -3
-DEFAULT_Y = -3
-CURR_Z = -15
-DEFAULT_Z = -15
-CURR_DEG = 0
-FOV = 60
+FCLIP = 100
+FOV = 70
+ROTATION = 2
 ORTHO = 0
+
+CURR_X = 0.0
+CURR_Y = 0.0
+CURR_Z = 0.0
+CURR_DEG = 0
+
+
+
 
 def init(): 
     glClearColor (0.0, 0.0, 0.0, 0.0)
@@ -37,7 +38,6 @@ def init():
     glMatrixMode(GL_MODELVIEW)
     glLoadIdentity()
     gluPerspective(FOV, DISPLAY_WIDTH / DISPLAY_HEIGHT, NCLIP, FCLIP)
-    glTranslate(DEFAULT_X, DEFAULT_Y, DEFAULT_Z)
 
 def drawHouse ():
     glLineWidth(2.5)
@@ -204,7 +204,65 @@ def display():
     # viewing transformation 
 
 
+    #House 1
+    glPushMatrix()
+    glTranslate(0,0,-30)
     drawHouse()
+    glPopMatrix()
+
+    #House 2
+    glPushMatrix()
+    glTranslate(15,0,-30)
+    drawHouse()
+    glPopMatrix()
+
+    #House 3
+    glPushMatrix()
+    glTranslate(-15,0,-30)
+    drawHouse()
+    glPopMatrix()
+
+    #House 4
+    glPushMatrix()
+    glTranslate(-30,0,-15)
+    glRotate(90,0,1,0)
+    drawHouse()
+    glPopMatrix()
+
+    #House 5
+    glPushMatrix()
+    glTranslate(-30,0, 0)
+    glRotate(90,0,1,0)
+    drawHouse()
+    glPopMatrix()
+
+    #House 6
+    glPushMatrix()
+    glTranslate(-30,0, 15)
+    glRotate(90,0,1,0)
+    drawHouse()
+    glPopMatrix()
+
+    #House 7
+    glPushMatrix()
+    glTranslate(0,0,30)
+    glRotate(180,0,1,0)
+    drawHouse()
+    glPopMatrix()
+
+    #House 8
+    glPushMatrix()
+    glTranslate(15,0,30)
+    glRotate(180,0,1,0)
+    drawHouse()
+    glPopMatrix()
+
+    #House 9
+    glPushMatrix()
+    glTranslate(-15,0,30)
+    glRotate(180,0,1,0)
+    drawHouse()
+    glPopMatrix()
 
     
     glFlush()
@@ -232,34 +290,41 @@ def keyboard(key, x, y):
     if key == b'w':
         print("W, move forward")
         x, z = movement(0,1)
-        CURR_Z += 1
+        CURR_Z += z
+        CURR_X += x
         glTranslate(x,0,z)
     elif key == b'a':
         print("A, move left")
         x, z = movement(1, 0)
-        CURR_X += 1
+        CURR_X += x
+        CURR_Z += z
         glTranslate(x, 0, z)
     elif key == b's':
         print("S, move back")
         x, z = movement(0, -1)
-        CURR_Z -= 1
+        CURR_Z += z
+        CURR_X += x
         glTranslate(x, 0, z)
     elif key == b'd':
         print("D, move right")
         x, z = movement(-1, 0)
-        CURR_X -= 1
+        CURR_Z += z
+        CURR_X += x
         glTranslate(x, 0, z)
     elif key == b'q':
         print("Q, turn left")
-        CURR_DEG -= 1
+        CURR_DEG -= ROTATION
+
         glTranslate(-CURR_X, -CURR_Y, -CURR_Z)
-        glRotate(-1,0,1,0)
+        glRotate(-ROTATION,0,1,0)
         glTranslate(CURR_X, CURR_Y, CURR_Z)
+
     elif key == b'e':
         print("E, turn right")
-        CURR_DEG += 1
+        CURR_DEG += ROTATION
+
         glTranslate(-CURR_X, -CURR_Y, -CURR_Z)
-        glRotate(1,0,1,0)
+        glRotate(ROTATION,0,1,0)
         glTranslate(CURR_X, CURR_Y, CURR_Z)
 
     elif key == b'r':
@@ -278,11 +343,11 @@ def keyboard(key, x, y):
             glOrtho(-10,10,-10,10, NCLIP, FCLIP)
         else:
             gluPerspective(FOV, DISPLAY_WIDTH / DISPLAY_HEIGHT, NCLIP, FCLIP)
-        glTranslate(DEFAULT_X, DEFAULT_Y, DEFAULT_Z)
+        glTranslate(0, 0, 0)
 
-        CURR_X = DEFAULT_X
-        CURR_Y = DEFAULT_Y
-        CURR_Z = DEFAULT_Z
+        CURR_X = 0
+        CURR_Y = 0
+        CURR_Z = 0
         CURR_DEG = 0
 
     elif key == b'o':
