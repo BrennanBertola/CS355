@@ -1,4 +1,6 @@
 # Import a library of functions called 'pygame'
+import copy
+
 import pygame
 import numpy as np
 from math import pi
@@ -190,7 +192,9 @@ done = False
 clock = pygame.time.Clock()
 start = Point(0.0,0.0)
 end = Point(0.0,0.0)
-linelist = loadHouse()
+houseLines = loadHouse()
+carLines = loadCar()
+tireLines = loadTire()
 
 NCLIP = 1
 FCLIP = 500
@@ -206,10 +210,10 @@ CURR_DEG = 0
 
 CAR_X = -15
 CAR_Y = 0
-CAR_Z = -15
+CAR_Z = 15
 
 TIRE_X = 2
-TIRE_Y = .25
+TIRE_Y = -.25
 TIRE_Z = 1.5
 
 ZOOM = 1/np.tan(FOV_RAD/2)
@@ -230,6 +234,8 @@ VIEW_MAT = np.array([[512/2,0,512/2],
                      [0,-512/2, 512/2],
                      [0,0,1]])
 
+T_LIST = []
+R_LIST = []
 def movement(x, z):
     rad = CURR_DEG * (np.pi/180)
     xMove = x*np.cos(rad) + z*-np.sin(rad)
@@ -242,15 +248,88 @@ def translate(x,y,z):
     TRANSITION_MAT[1, 3] = TRANSITION_MAT[1, 3] + y
     TRANSITION_MAT[2, 3] = TRANSITION_MAT[2, 3] + z
 
-def rotate():
-    rad = CURR_DEG * (np.pi/180)
-
+def rotate(deg):
+    rad = (CURR_DEG+deg) * (np.pi/180)
     ROTATION_MAT[0,0] = np.cos(rad)
     ROTATION_MAT[0,2] = np.sin(rad)
     ROTATION_MAT[2,0] = -np.sin(rad)
     ROTATION_MAT[2,2] = np.cos(rad)
 
-    pass
+def rotateObj(deg, lines):
+    rad = deg * (np.pi / 180)
+    newLines = copy.deepcopy(lines)
+    for s in newLines:
+        sX = np.cos(rad)*s.start.x + np.sin(rad)*s.start.z
+        eX = np.cos(rad)*s.end.x + np.sin(rad)*s.end.z
+        sZ = -np.sin(rad)*s.start.x + np.cos(rad)*s.start.z
+        eZ = -np.sin(rad)*s.end.x + np.cos(rad)*s.end.z
+
+        s.start.x = sX
+        s.start.z = sZ
+        s.end.x = eX
+        s.end.z = eZ
+    return newLines
+
+def push():
+    T_LIST.append(np.copy(TRANSITION_MAT))
+    R_LIST.append(np.copy(ROTATION_MAT))
+
+def pop():
+    global TRANSITION_MAT
+    global ROTATION_MAT
+    TRANSITION_MAT = np.copy(T_LIST[-1])
+    T_LIST.pop(-1)
+    ROTATION_MAT = np.copy(R_LIST[-1])
+    R_LIST.pop(-1)
+
+def drawLines(lines, color):
+    global CAM_MAT
+
+    for s in lines:
+        #convert ot homogenouse
+        end = np.array([s.end.x, s.end.y, s.end.z, 1])
+        start = np.array([s.start.x, s.start.y, s.start.z, 1])
+
+        #convert to cam coordinates
+        CAM_MAT = ROTATION_MAT @ TRANSITION_MAT
+        end = CAM_MAT @ end
+        start = CAM_MAT @ start
+
+        #apply clip matrix
+        end = CLIP_MAT@end
+        start = CLIP_MAT@start
+
+        #Cliping Tests
+        accept = True
+
+        start = start/start[3]
+        end = end/end[3]
+
+        if (start[0] < -start[3] and end[0] < -end[3]):
+            accept = False
+        elif(start[0] > start[3] and end[0] > end[3]):
+            accept = False
+        elif(start[1] < -start[3] and end[1] < -end[3]):
+            accept = False
+        elif(start[1] > start[3] and end[1] > end[3]):
+            accept = False
+        elif(start[2] < -start[3] or end[2] < -end[3]):
+            accept = False
+        elif(start[2] > start[3] or end[2] > end[3]):
+            accept = False
+
+        if(not accept):
+            continue
+        #to canonical space
+        end = np.array([end[0]/end[3], end[1]/end[3], 1])
+        start = np.array([start[0]/start[3], start[1]/start[3], 1])
+
+        #to screen space
+        end = VIEW_MAT@end
+        start = VIEW_MAT@start
+
+        pygame.draw.line(screen, color, (start[0],start[1]), (end[0],end[1]))
+
 
 #Loop until the user clicks the close button.
 while not done:
@@ -299,14 +378,14 @@ while not done:
         CURR_DEG += ROTATION
 
         translate(-CURR_X, -CURR_Y, -CURR_Z)
-        rotate()
+        rotate(ROTATION)
         translate(CURR_X, CURR_Y, CURR_Z)
     elif pressed[pygame.K_e]:
         print("e is pressed")
         CURR_DEG -= ROTATION
 
         translate(-CURR_X, -CURR_Y, -CURR_Z)
-        rotate()
+        rotate(ROTATION)
         translate(CURR_X, CURR_Y, CURR_Z)
     elif pressed[pygame.K_r]:
         print("r is pressed")
@@ -324,7 +403,7 @@ while not done:
         CURR_DEG = 0
         CAR_X = -15
         CAR_Y = 0
-        CAR_Z = -15
+        CAR_Z = 15
 
         TRANSITION_MAT = np.array([[1.0, 0.0, 0.0, 0.0],
                                    [0.0, 1.0, 0.0, 0.0],
@@ -335,59 +414,84 @@ while not done:
                                  [0.0, 0.0, 1.0, 0.0],
                                  [0.0, 0.0, 0.0, 1.0]])
 
-
-
-
-
-
-
     #Viewer Code#
     #####################################################################
+    push()
+    translate(0,0,-30)
+    drawLines(houseLines, RED)
+    pop()
 
-    for s in linelist:
-        #convert ot homogenouse
-        end = np.array([s.end.x, s.end.y, s.end.z, 1])
-        start = np.array([s.start.x, s.start.y, s.start.z, 1])
+    push()
+    translate(15,0,-30)
+    drawLines(houseLines, RED)
+    pop()
 
-        #convert to cam coordinates
-        CAM_MAT = ROTATION_MAT@TRANSITION_MAT
-        end = CAM_MAT @ end
-        start = CAM_MAT @ start
+    push()
+    translate(-15,0,-30)
+    drawLines(houseLines, RED)
+    pop()
 
-        #apply clip matrix
-        end = CLIP_MAT@end
-        start = CLIP_MAT@start
+    push()
+    translate(-30,0,15)
+    newLines = rotateObj(90, houseLines)
+    drawLines(newLines, RED)
+    pop()
 
-        #Cliping Tests
-        accept = True
+    push()
+    translate(-30,0,0)
+    newLines = rotateObj(90, houseLines)
+    drawLines(newLines, RED)
+    pop()
 
-        # start = start/start[w]
-        # end = end/end[w]
+    push()
+    translate(-30,0,-15)
+    newLines = rotateObj(90, houseLines)
+    drawLines(newLines, RED)
+    pop()
 
-        if (start[0] < -start[3] and end[0] < -end[3]):
-            accept = False
-        elif(start[0] > start[3] and end[0] > end[3]):
-            accept = False
-        elif(start[1] < -start[3] and end[1] < -end[3]):
-            accept = False
-        elif(start[1] > start[3] and end[1] > end[3]):
-            accept = False
-        elif(start[2] < -start[3] or end[2] < -end[3]):
-            accept = False
-        elif(start[2] > start[3] and end[2] > end[3]):
-            accept = False
+    push()
+    translate(0,0,30)
+    newLines = rotateObj(180, houseLines)
+    drawLines(newLines, RED)
+    pop()
 
-        if(not accept):
-            continue
-        #to canonical space
-        end = np.array([end[0]/end[3], end[1]/end[3], 1])
-        start = np.array([start[0]/start[3], start[1]/start[3], 1])
+    push()
+    translate(15,0,30)
+    newLines = rotateObj(180, houseLines)
+    drawLines(newLines, RED)
+    pop()
 
-        #to screen space
-        end = VIEW_MAT@end
-        start = VIEW_MAT@start
+    push()
+    translate(-15,0,30)
+    newLines = rotateObj(180, houseLines)
+    drawLines(newLines, RED)
+    pop()
 
-        pygame.draw.line(screen, BLUE, (start[0],start[1]), (end[0],end[1]))
+    push()
+    translate(CAR_X, CAR_Y, CAR_Z)
+    drawLines(carLines, BLUE)
+
+    push()
+    translate(TIRE_X, TIRE_Y, TIRE_Z)
+    drawLines(tireLines, GREEN)
+    pop()
+
+    push()
+    translate(-TIRE_X, TIRE_Y, TIRE_Z)
+    drawLines(tireLines, GREEN)
+    pop()
+
+    push()
+    translate(TIRE_X, TIRE_Y, -TIRE_Z)
+    drawLines(tireLines, GREEN)
+    pop()
+
+    push()
+    translate(-TIRE_X, TIRE_Y, -TIRE_Z)
+    drawLines(tireLines, GREEN)
+    pop()
+    pop()
+
 
     # Go ahead and update the screen with what we've drawn.
     # This MUST happen after all the other drawing commands.
