@@ -9,7 +9,7 @@ import basicShapes as shape
 
 class WireframeViewer(wf.WireframeGroup):
     """ A group of wireframes which can be displayed on a Pygame screen """
-    
+
     def __init__(self, width, height, name="Wireframe Viewer"):
         self.width = width
         self.height = height
@@ -29,15 +29,15 @@ class WireframeViewer(wf.WireframeGroup):
         self.eyeX = self.width/2
         self.eyeY = 100
         self.light_color = np.array([1,1,1])
-        self.view_vector = np.array([0, 0, -1])        
-        self.light_vector = np.array([0, 0, -1])  
+        self.view_vector = np.array([0.0, 0.0, -1.0])
+        self.light_vector = np.array([0.0, 0.0, -1.0])
 
         self.background = (10,10,50)
         self.nodeColour = (250,250,250)
         self.nodeRadius = 4
         
         self.control = 0
-    
+        self.move = 7
     def addWireframe(self, name, wireframe):
         self.wireframes[name] = wireframe
         #   If colour is set to None, then wireframe is not displayed
@@ -47,7 +47,20 @@ class WireframeViewer(wf.WireframeGroup):
         # Potential danger of overwriting names
         for name, wireframe in wireframe_group.wireframes.items():
             self.addWireframe(name, wireframe)
-    
+
+    def normalize(self, v):
+        val = 0
+        for i in range (len(v)):
+            val += v[i]**2
+
+        val = np.sqrt(val)
+        newV = np.copy(v)
+
+        for i in range (len(newV)):
+            newV[i] = newV[i]/val
+
+        return newV
+
     def display(self):
         self.screen.fill(self.background)
 
@@ -65,26 +78,28 @@ class WireframeViewer(wf.WireframeGroup):
 
                     # Only draw faces that face us
                     if towards_us > 0:
-                        m_ambient = 0.1
+                        m_ambient = 0.2
+                        m_diffuse = 0.3
+                        m_spec = .5
+                        mgls = 4
+
+                        lNorm = self.normalize(self.light_vector)
+                        vNorm = self.normalize(self.view_vector)
+                        rNorm = 2 * np.dot(lNorm, normal) * normal - lNorm
+
                         ambient = self.light_color * (m_ambient * colour)
+                        diffuse = m_diffuse * self.light_color * colour * np.dot(lNorm, normal)
+                        spec = m_spec * self.light_color * colour * np.dot(rNorm, vNorm) ** mgls
 
-                        #Your lighting code here
-                        #Make note of the self.view_vector and self.light_vector 
-                        #Use the Phong model
-
-
-
-
-
-
-
-
-
-
+                        if np.dot(normal, lNorm) < 0:
+                            diffuse = 0
+                        if np.dot(rNorm, vNorm) < 0:
+                            spec = 0
 
 
 						#Once you have implemented diffuse and specular lighting, you will want to include them here
-                        light_total = ambient
+                        light_total = ambient + diffuse + spec
+                        light_total = np.clip(light_total, 0, 255)
 
                         pygame.draw.polygon(self.screen, light_total, [(nodes[node][0], nodes[node][1]) for node in face], 0)
 
@@ -110,30 +125,50 @@ class WireframeViewer(wf.WireframeGroup):
         
         pygame.display.flip()
 
+
+    def rotateX(self, move):
+        rad = move * (np.pi / 180)
+        xRotMat = np.array([[1, 0, 0],
+                            [0, np.cos(rad), -np.sin(rad)],
+                            [0, np.sin(rad), np.cos(rad)]])
+
+        self.light_vector = xRotMat@self.light_vector
+
+    def rotateY(self, move):
+        rad = move * (np.pi / 180)
+        yRotMat = np.array([[np.cos(rad), 0, -np.sin(rad)],
+                            [0, 1, 0],
+                            [np.sin(rad), 0, np.cos(rad)]])
+        self.light_vector = yRotMat@self.light_vector
+
+    def rotateZ(self, move):
+        rad = move * (np.pi / 180)
+        zRotMat = np.array([[np.cos(rad), -np.sin(rad), 0],
+                            [np.sin(rad), np.cos(rad), 0],
+                            [0, 0, 1]])
+        self.light_vector = zRotMat @ self.light_vector
+
     def keyEvent(self, key):
         
         #Your code here
         if key == pygame.K_w:
             print("w, rotate up")
+            self.rotateX(-self.move)
         elif key == pygame.K_a:
             print("a, rotate left")
+            self.rotateY(-self.move)
         elif key == pygame.K_s:
             print("s, rotate down")
+            self.rotateX(self.move)
         elif key == pygame.K_d:
             print("d, rotate down")
+            self.rotateY(self.move)
         elif key == pygame.K_q:
             print("q, rotate ccw")
+            self.rotateZ(-self.move)
         elif key == pygame.K_e:
             print("e, rotate cw")
-
-
-
-
-
-
-
-
-
+            self.rotateZ(self.move)
 
         return
 
