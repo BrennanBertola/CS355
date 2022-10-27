@@ -114,9 +114,17 @@ class WireframeViewer(wf.WireframeGroup):
         
         #Your code here
         if key == pygame.K_w:
-            print("w is pressed")
+            print("w, rotate up")
         elif key == pygame.K_a:
-            print("a is pressed")
+            print("a, rotate left")
+        elif key == pygame.K_s:
+            print("s, rotate down")
+        elif key == pygame.K_d:
+            print("d, rotate down")
+        elif key == pygame.K_q:
+            print("q, rotate ccw")
+        elif key == pygame.K_e:
+            print("e, rotate cw")
 
 
 
